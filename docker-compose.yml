@@ -8,7 +8,7 @@ services:
     volumes:
       - mongo-data:/data/db
     networks:
-      - factorio-network
+      - db-network
 
   mongo-express:
     image: mongo-express:latest
@@ -22,21 +22,20 @@ services:
       ME_CONFIG_BASICAUTH_USERNAME: admin
       ME_CONFIG_BASICAUTH_PASSWORD: admin 
     networks:
-      - factorio-network
+      - db-network
 
   # --- Microservices ---
 
   auth-service:
-    build:
-      context: ./auth-service
-      dockerfile: Dockerfile
+    build: ./auth-service
     container_name: factorio-auth
     depends_on:
       - mongodb
     environment:
       - MONGO_DETAILS=mongodb://mongodb:27017
     networks:
-      - factorio-network
+      - gateway-network
+      - db-network
 
   persistence-bridge:
     build: ./persistence-bridge
@@ -48,24 +47,25 @@ services:
       - MONGO_URI=mongodb://mongodb:27017/blueprints_db
       - VALIDATOR_URL=http://validator-service:3000/validate
     networks:
-      - factorio-network
+      - internal-network
+      - db-network
 
   validator-service:
     build: ./validator-service
     container_name: validator-service
     networks:
-      - factorio-network
+      - internal-network
+
   logic-service:
     build: ./blueprint-logic
     container_name: logic-service
     depends_on:
       - persistence-bridge
-    # ports:
-    #   - "5000:3000" # Maps [Host Port]:[Container Port]
     networks:
-      - factorio-network
-    # Note: We won't expose ports here. 
-    # Eventually, Kong API Gateway will handle the entry point.
+      - gateway-network
+      - internal-network
+
+  # --- Gateway & Management ---
 
   kong-db:
     image: postgres:13
@@ -77,43 +77,48 @@ services:
     volumes:
       - kong_data:/var/lib/postgresql/data
     networks:
-      - factorio-network
+      - db-network
 
   kong-migrations:
-    image: kong:latest
-    command: kong migrations bootstrap
-    depends_on:
-      - kong-db
-    environment:
-      KONG_DATABASE: postgres
-      KONG_PG_HOST: kong-db
-      KONG_PG_USER: kong
-      KONG_PG_PASSWORD: kong
-    networks:
-      - factorio-network
+      image: kong:latest
+      command: kong migrations bootstrap
+      depends_on:
+        - kong-db
+      environment:
+        KONG_DATABASE: postgres
+        KONG_PG_HOST: kong-db
+        KONG_PG_PASSWORD: kong
+      networks:
+        - db-network
 
   kong:
-    image: kong:latest
-    container_name: kong-gateway
-    depends_on:
-      - kong-db
-    environment:
-      KONG_DATABASE: postgres
-      KONG_PG_HOST: kong-db
-      KONG_PG_USER: kong
-      KONG_PG_PASSWORD: kong
-      KONG_PROXY_LISTEN: 0.0.0.0:8000
-      KONG_ADMIN_LISTEN: 0.0.0.0:8001
-    ports:
-      - "8000:8000"
-      - "8001:8001"
-    networks:
-      - factorio-network
+      image: kong:latest
+      container_name: kong-gateway
+      depends_on:
+        - kong-db
+        - kong-migrations # Wait for migrations to finish
+      environment:
+        KONG_DATABASE: postgres
+        KONG_PG_HOST: kong-db
+        KONG_PG_USER: kong
+        KONG_PG_PASSWORD: kong
+        KONG_PROXY_LISTEN: 0.0.0.0:8000
+        KONG_ADMIN_LISTEN: 0.0.0.0:8001
+      ports:
+        - "8000:8000" # Traffic
+        - "8001:8001" # Admin API
+      networks:
+        - gateway-network
+        - db-network
+
+networks:
+  gateway-network:
+    driver: bridge
+  internal-network:
+    driver: bridge
+  db-network:
+    driver: bridge
 
 volumes:
   kong_data:
   mongo-data:
-
-networks:
-  factorio-network:
-    driver: bridge
