@@ -1,17 +1,20 @@
 from fastapi import FastAPI, HTTPException, Depends
 from pydantic import BaseModel
 from passlib.context import CryptContext
+import asyncio
+import os
 from motor.motor_asyncio import AsyncIOMotorClient
 from datetime import datetime, timezone, timedelta
 import jwt
 
 app = FastAPI()
 
-MONGO_DETAILS = "mongodb://mongodb:27017"
+MONGO_DETAILS = os.getenv("MONGO_DETAILS", "mongodb://mongodb:27017")
 SECRET_KEY = "factorio_super_secret_key"
 ALGORITHM = "HS256"
 
 client = AsyncIOMotorClient(MONGO_DETAILS)
+client.get_io_loop = asyncio.get_event_loop
 database = client.users_db
 user_collection = database.get_collection("users")
 
@@ -37,7 +40,7 @@ def create_access_token(data: dict):
         return encoded_jwt.decode('utf-8')
     return encoded_jwt
 
-@app.post("/register")
+@app.post("/register", status_code=201)
 async def register(user: User):
     existing_user = await user_collection.find_one({"username": user.username})
     if existing_user:
