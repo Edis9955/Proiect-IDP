@@ -22,6 +22,7 @@ test_auth:
     - pip install --no-cache-dir -r requirements.txt
     - pip install pytest httpx
     # Rulează pytest exact cum am făcut local, dar pe calea din pipeline
+    - export PYTHONPATH=$PYTHONPATH:.
     - pytest tests/test_auth.py
 
 # Build-ul imaginii Docker (doar dacă testele au trecut)
