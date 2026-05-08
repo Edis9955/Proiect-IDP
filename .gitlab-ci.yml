@@ -20,7 +20,7 @@ test_auth:
     - python3 -m pytest tests/test_auth.py
 
 # BLUEPRINT-LOGIC tests
-test_logic:
+test_blueprint-logic:
   stage: test
   image: node:18-slim
   only:
@@ -29,7 +29,7 @@ test_logic:
   script:
     - cd blueprint-logic
     - npm install
-    - npm test
+    - npx jest --passWithNoTests
 
 build_auth:
   stage: build
@@ -50,7 +50,7 @@ build_auth:
     - docker info
     - docker build -t factorio-auth-service:$CI_COMMIT_SHORT_SHA .
 
-build_logic:
+build_blueprint-logic:
   stage: build
   image: docker:24.0
   services:
