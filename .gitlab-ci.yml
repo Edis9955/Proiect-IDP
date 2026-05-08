@@ -31,36 +31,34 @@ test_blueprint-logic:
     - npm install
     - npx jest --passWithNoTests
 
+# Build Auth (Python) folosind Kaniko
 build_auth:
   stage: build
-  image: docker:24.0
-  services:
-    - name: docker:24.0-dind
-      alias: docker
-  variables:
-    DOCKER_HOST: tcp://docker:2375
-    DOCKER_TLS_CERTDIR: ""
-    DOCKER_DRIVER: overlay2
+  image:
+    name: gcr.io/kaniko-project/executor:debug
+    entrypoint: [""]
   only:
     changes:
       - auth-service/**/*
   script:
-    - cd auth-service
-    - sleep 5 
-    - docker info
-    - docker build -t factorio-auth-service:$CI_COMMIT_SHORT_SHA .
+    - /kaniko/executor
+      --context "${CI_PROJECT_DIR}/auth-service"
+      --dockerfile "${CI_PROJECT_DIR}/auth-service/Dockerfile"
+      --no-push  # Doar testează build-ul, nu trimite imaginea nicaieri
+      --destination "factorio-auth-service:$CI_COMMIT_SHORT_SHA"
 
-build_blueprint-logic:
+# Build Logic (Node.js) folosind Kaniko
+build_logic:
   stage: build
-  image: docker:24.0
-  services:
-    - name: docker:24.0-dind
-      alias: docker
-  variables:
-    DOCKER_TLS_CERTDIR: ""
+  image:
+    name: gcr.io/kaniko-project/executor:debug
+    entrypoint: [""]
   only:
     changes:
       - blueprint-logic/**/*
   script:
-    - cd blueprint-logic
-    - docker build -t factorio-logic-service:$CI_COMMIT_SHORT_SHA .
+    - /kaniko/executor
+      --context "${CI_PROJECT_DIR}/blueprint-logic"
+      --dockerfile "${CI_PROJECT_DIR}/blueprint-logic/Dockerfile"
+      --no-push
+      --destination "factorio-logic-service:$CI_COMMIT_SHORT_SHA"
