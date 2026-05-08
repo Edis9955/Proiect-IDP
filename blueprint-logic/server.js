@@ -88,7 +88,8 @@ app.delete('/api/blueprints/:id', async (req, res) => {
 
 
 
+if (require.main === module) {
+    app.listen(3000, () => console.log('Blueprint Logic Service active on port 3000'));
+}
 
-
-
-app.listen(3000, () => console.log('Blueprint Logic Service active on port 3000'));
+module.exports = app;
