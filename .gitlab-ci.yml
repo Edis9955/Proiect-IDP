@@ -19,7 +19,7 @@ test_auth:
     - pip install --no-cache-dir -r requirements.txt
     # Folosim varianta "python -m pytest" care adaugă automat folderul curent la PATH
     # Și rulăm direct din auth-service, unde se află auth_service.py
-    - python3 -m pytest tests/test_auth.py
+    - PYTHONPATH=. python3 -m pytest tests/test_auth.py
 
 build_auth:
   stage: build
