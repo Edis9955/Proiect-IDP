@@ -17,8 +17,10 @@ describe('Persistence Bridge Integration Tests', () => {
 
     // După teste, curățăm baza de date și închidem conexiunea
     afterAll(async () => {
-        await mongoose.connection.db.dropDatabase();
-        await mongoose.close();
+        if (mongoose.connection.readyState !== 0) {
+            await mongoose.connection.db.dropDatabase();
+            await mongoose.connection.close(); // MODIFICAT AICI
+        }
     });
 
     test('POST /blueprints - should save blueprint when validator returns true', async () => {
