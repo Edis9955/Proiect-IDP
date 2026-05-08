@@ -2,39 +2,36 @@ stages:
   - test
   - build
 
-# Testarea serviciului de autentificare
 test_auth:
   stage: test
   image: python:3.10-slim
   services:
     - name: mongo:latest
-      alias: mongodb  # Aici definim host-ul pentru baza de date temporară
+      alias: mongodb
   variables:
-    # Îi spunem codului unde e baza de date pornită de GitLab
     MONGO_DETAILS: "mongodb://mongodb:27017"
-    # Îi spunem lui Python să caute modulele în folderul auth-service
-    PYTHONPATH: "auth-service"
+    # Scoatem PYTHONPATH de aici pentru a evita conflictele de cale
   only:
     changes:
       - auth-service/**/*
   script:
     - cd auth-service
     - pip install --no-cache-dir -r requirements.txt
-    - pip install pytest httpx
-    # Rulează pytest exact cum am făcut local, dar pe calea din pipeline
-    - export PYTHONPATH=$PYTHONPATH:.
-    - pytest tests/test_auth.py
+    # Folosim varianta "python -m pytest" care adaugă automat folderul curent la PATH
+    # Și rulăm direct din auth-service, unde se află auth_service.py
+    - python3 -m pytest tests/test_auth.py
 
-# Build-ul imaginii Docker (doar dacă testele au trecut)
 build_auth:
   stage: build
   image: docker:24.0
   services:
-    - docker:dind
+    - name: docker:24.0-dind
+      alias: docker # Important pentru runner-ele care folosesc TLS
+  variables:
+    DOCKER_TLS_CERTDIR: "" # Dezactivăm TLS dacă runner-ul Grid nu e configurat special
   only:
     changes:
       - auth-service/**/*
   script:
     - cd auth-service
     - docker build -t factorio-auth-service:$CI_COMMIT_SHORT_SHA .
-    # Aici poți adăuga 'docker push' dacă ai un Registry (Docker Hub/GitLab Registry)
