@@ -24,12 +24,17 @@ build_auth:
   image: docker:24.0
   services:
     - name: docker:24.0-dind
-      alias: docker # Important pentru runner-ele care folosesc TLS
+      alias: docker
   variables:
-    DOCKER_TLS_CERTDIR: "" # Dezactivăm TLS dacă runner-ul Grid nu e configurat special
+    DOCKER_HOST: tcp://docker:2375  # Forțează comunicarea prin TCP către serviciu
+    DOCKER_TLS_CERTDIR: ""
+    DOCKER_DRIVER: overlay2
   only:
     changes:
       - auth-service/**/*
   script:
     - cd auth-service
+    # Așteptăm câteva secunde ca serviciul Docker să pornească efectiv
+    - sleep 5 
+    - docker info # Comandă de debug pentru a vedea dacă se conectează
     - docker build -t factorio-auth-service:$CI_COMMIT_SHORT_SHA .
