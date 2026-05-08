@@ -10,16 +10,14 @@ test_auth:
       alias: mongodb
   variables:
     MONGO_DETAILS: "mongodb://mongodb:27017"
-    # Scoatem PYTHONPATH de aici pentru a evita conflictele de cale
   only:
     changes:
       - auth-service/**/*
   script:
     - cd auth-service
     - pip install --no-cache-dir -r requirements.txt
-    # Folosim varianta "python -m pytest" care adaugă automat folderul curent la PATH
-    # Și rulăm direct din auth-service, unde se află auth_service.py
-    - PYTHONPATH=. python3 -m pytest tests/test_auth.py
+    # This is the line that needs changing:
+    - python3 -m pytest tests/test_auth.py
 
 build_auth:
   stage: build
