@@ -31,7 +31,24 @@ test_blueprint-logic:
     - npm install
     - npx jest --passWithNoTests
 
-# Build Auth (Python)
+# PERSISTANCE-BRIDGE tests
+test_bridge:
+  stage: test
+  image: node:18-slim
+  services:
+    - name: mongo:latest
+      alias: mongodb
+  variables:
+    MONGO_URI: "mongodb://mongodb:27017/bridge_test_db"
+  only:
+    changes:
+      - persistence-bridge/**/*
+  script:
+    - cd persistence-bridge
+    - npm install
+    - npx jest --passWithNoTests
+
+# AUTH build
 build_auth:
   stage: build
   image:
@@ -48,8 +65,8 @@ build_auth:
         --no-push \
         --destination "factorio-auth-service:$CI_COMMIT_SHORT_SHA"
 
-# Build Logic (Node.js)
-build_logic:
+# BLUEPRINT-LOGIC build
+build_blueprint-logic:
   stage: build
   image:
     name: gcr.io/kaniko-project/executor:debug
@@ -64,3 +81,20 @@ build_logic:
         --dockerfile "${CI_PROJECT_DIR}/blueprint-logic/Dockerfile" \
         --no-push \
         --destination "factorio-logic-service:$CI_COMMIT_SHORT_SHA"
+
+# PERSISTANCE-BRIDGE build
+build_persistance-bridge:
+  stage: build
+  image:
+    name: gcr.io/kaniko-project/executor:debug
+    entrypoint: [""]
+  only:
+    changes:
+      - persistence-bridge/**/*
+  script:
+    - |
+      /kaniko/executor \
+        --context "${CI_PROJECT_DIR}/persistence-bridge" \
+        --dockerfile "${CI_PROJECT_DIR}/persistence-bridge/Dockerfile" \
+        --no-push \
+        --destination "persistence-bridge:$CI_COMMIT_SHORT_SHA"

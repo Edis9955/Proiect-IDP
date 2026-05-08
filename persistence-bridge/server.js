@@ -76,4 +76,10 @@ app.delete('/blueprints/:id', async (req, res) => {
     res.status(500).send(error.message);
   }
 });
-app.listen(3000, () => console.log('Persistence Bridge running on port 3000'));
+
+
+if (require.main === module) {
+    app.listen(3000, () => console.log('Persistence Bridge running on port 3000'));
+}
+
+module.exports = app;
