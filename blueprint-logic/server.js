@@ -1,9 +1,18 @@
 const express = require('express');
 const axios = require('axios');
+const client = require('prom-client');
 const app = express();
-app.use(express.json());
+
+const register = new client.Registry();
+client.collectDefaultMetrics({ register });
+
+app.get('/metrics', async (req, res) => {
+    res.setHeader('Content-Type', register.contentType);
+    res.send(await register.metrics());
+});
 
 const BRIDGE_URL = 'http://persistence-bridge:3000/blueprints';
+app.use(express.json());
 
 // Rule: Users must provide a title and a valid string to save
 app.post('/api/blueprints/share', async (req, res) => {

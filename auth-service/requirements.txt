@@ -8,3 +8,4 @@ cryptography
 pyjwt
 pytest
 httpx
+prometheus-fastapi-instrumentator

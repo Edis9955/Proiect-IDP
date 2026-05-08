@@ -24,6 +24,29 @@ services:
     networks:
       - db-network
 
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - app-network
+    
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin # Parola default
+    networks:
+      - app-network
+    volumes:
+      - grafana-storage:/var/lib/grafana
+
   # --- Microservices ---
 
   auth-service:
@@ -36,6 +59,7 @@ services:
     networks:
       - gateway-network
       - db-network
+      - app-network
 
   persistence-bridge:
     build: ./persistence-bridge
@@ -49,12 +73,14 @@ services:
     networks:
       - internal-network
       - db-network
+      - app-network
 
   validator-service:
     build: ./validator-service
     container_name: validator-service
     networks:
       - internal-network
+      - app-network
 
   logic-service:
     build: ./blueprint-logic
@@ -112,6 +138,8 @@ services:
         - db-network
 
 networks:
+  app-network:
+    driver: bridge
   gateway-network:
     driver: bridge
   internal-network:
@@ -122,3 +150,5 @@ networks:
 volumes:
   kong_data:
   mongo-data:
+  prometheus-data:
+  grafana-storage:

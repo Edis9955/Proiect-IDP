@@ -1,6 +1,15 @@
 const express = require('express');
 const zlib = require('zlib');
+const client = require('prom-client');
 const app = express();
+
+const register = new client.Registry();
+client.collectDefaultMetrics({ register });
+
+app.get('/metrics', async (req, res) => {
+    res.setHeader('Content-Type', register.contentType);
+    res.send(await register.metrics());
+});
 
 // Middleware to parse JSON request bodies
 app.use(express.json());

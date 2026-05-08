@@ -1,7 +1,16 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const axios = require('axios');
+const client = require('prom-client');
 const app = express();
+
+const register = new client.Registry();
+client.collectDefaultMetrics({ register });
+
+app.get('/metrics', async (req, res) => {
+    res.setHeader('Content-Type', register.contentType);
+    res.send(await register.metrics());
+});
 
 app.use(express.json());
 

@@ -1,0 +1,15 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'auth-service'
+    static_configs:
+      - targets: ['auth-service:8000']
+
+  - job_name: 'validator-service'
+    static_configs:
+      - targets: ['validator-service:3000']
+
+  - job_name: 'persistence-bridge'
+    static_configs:
+      - targets: ['persistence-bridge:3000']
