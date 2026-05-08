@@ -32,7 +32,7 @@ test_blueprint-logic:
     - npx jest --passWithNoTests
 
 # PERSISTANCE-BRIDGE tests
-test_bridge:
+test_persistance-bridge:
   stage: test
   image: node:18-slim
   services:
@@ -47,6 +47,18 @@ test_bridge:
     - cd persistence-bridge
     - npm install
     - npx jest --passWithNoTests
+
+# VALIDATOR-SERVICE tests
+test_validator:
+  stage: test
+  image: node:18-slim
+  only:
+    changes:
+      - validator-service/**/*
+  script:
+    - cd validator-service
+    - npm install
+    - npx jest --passWithNoTests --forceExit
 
 # AUTH build
 build_auth:
@@ -98,3 +110,20 @@ build_persistance-bridge:
         --dockerfile "${CI_PROJECT_DIR}/persistence-bridge/Dockerfile" \
         --no-push \
         --destination "persistence-bridge:$CI_COMMIT_SHORT_SHA"
+
+# VALIDATOR-SERVICE build
+build_validator:
+  stage: build
+  image:
+    name: gcr.io/kaniko-project/executor:debug
+    entrypoint: [""]
+  only:
+    changes:
+      - validator-service/**/*
+  script:
+    - |
+      /kaniko/executor \
+        --context "${CI_PROJECT_DIR}/validator-service" \
+        --dockerfile "${CI_PROJECT_DIR}/validator-service/Dockerfile" \
+        --no-push \
+        --destination "validator-service:$CI_COMMIT_SHORT_SHA"
