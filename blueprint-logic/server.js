@@ -42,6 +42,8 @@ app.get('/api/blueprints', async (req, res) => {
         res.status(500).send("Internal Logic Error");
     }
 });
+
+
 app.get('/api/my-blueprints', async (req, res) => {
     try {
         const currentUser = req.headers['x-user-name'];
@@ -62,6 +64,7 @@ app.get('/api/my-blueprints', async (req, res) => {
         res.status(500).send("Could not retrieve your blueprints");
     }
 });
+
 
 app.delete('/api/blueprints/:id', async (req, res) => {
   try {
@@ -87,7 +90,7 @@ app.delete('/api/blueprints/:id', async (req, res) => {
 });
 
 
-
+// Start the server only if the file is run directly (not imported for tests)
 if (require.main === module) {
     app.listen(3000, () => console.log('Blueprint Logic Service active on port 3000'));
 }

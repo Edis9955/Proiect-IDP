@@ -78,6 +78,7 @@ app.delete('/blueprints/:id', async (req, res) => {
 });
 
 
+// Start the server only if the file is run directly (not imported for tests)
 if (require.main === module) {
     app.listen(3000, () => console.log('Persistence Bridge running on port 3000'));
 }

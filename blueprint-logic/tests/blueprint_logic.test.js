@@ -2,19 +2,17 @@ const request = require('supertest');
 const axios = require('axios');
 const express = require('express');
 
-// Importăm aplicația (va trebui să modifici server.js să facă module.exports, vezi pasul următor)
-// Pentru moment, presupunem că am extras logica într-un fișier separat sau exportăm app.
 const app = require('../server'); 
-
-jest.mock('axios'); // Simulăm axios pentru a nu trimite cereri reale către bridge
+jest.mock('axios');
 
 describe('Blueprint Logic Service Tests', () => {
-
+    // Wipes the slate clean before every single test.
     beforeEach(() => {
         jest.clearAllMocks();
     });
 
-    // TEST 1: Regula de business - Titlu prea scurt
+    // It sends a title with only 2 letters ("Ab"). The service is expected to reject this immediately
+    // with a 400 Bad Request before even trying to talk to the database.
     test('POST /api/blueprints/share - should fail if title is too short', async () => {
         const response = await request(app)
             .post('/api/blueprints/share')
@@ -24,9 +22,10 @@ describe('Blueprint Logic Service Tests', () => {
         expect(response.body.error).toBe("Title too short");
     });
 
-    // TEST 2: Succes Share Blueprint
+    // It "primes" axios to return a fake ID (12345).
+    // It sends a valid request with a custom header (x-user-name).
+    // It verifies the service returns 201 Created and correctly passed the username "levent" to the backend bridge.
     test('POST /api/blueprints/share - should succeed and forward to bridge', async () => {
-        // Simulăm răspunsul de la Persistence Bridge
         axios.post.mockResolvedValue({ data: { _id: "12345" } });
 
         const response = await request(app)
@@ -37,18 +36,17 @@ describe('Blueprint Logic Service Tests', () => {
         expect(response.statusCode).toBe(201);
         expect(response.body.message).toContain("successfully");
         expect(response.body.id).toBe("12345");
-        // Verificăm dacă a trimis autorul corect către bridge
         expect(axios.post).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({
             author: "levent"
         }));
     });
 
-    // TEST 3: Securitate - Delete Unauthorized
+    // It mocks a situation where a blueprint belongs to "Admin".
+    // A user named "Hacker" tries to delete it.
+    // It verifies the service blocks the request with a 403 Forbidden error.
     test('DELETE /api/blueprints/:id - should block if user is not the author', async () => {
-        // 1. Simulăm că bridge-ul returnează un blueprint creat de "Admin"
         axios.get.mockResolvedValue({ data: { _id: "99", author: "Admin", title: "Secret" } });
 
-        // 2. Încercăm să îl ștergem ca "Hacker"
         const response = await request(app)
             .delete('/api/blueprints/99')
             .set('x-user-name', 'Hacker');
