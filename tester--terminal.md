@@ -101,12 +101,12 @@ curl -X DELETE http://localhost:8000/blueprints/api/blueprints/69d2d1ecfd795608d
 
 curl -X POST http://localhost:8000/auth/register \
 -H "Content-Type: application/json" \
--d '{"username": "Test2", "password": "parola_secreta2"}'
+-d '{"username": "Test2", "password": "parola_secreta2"}' | jq
 
 
 curl -X POST http://localhost:8000/auth/login \
 -H "Content-Type: application/json" \
--d '{"username": "Test2", "password": "parola_secreta2"}'
+-d '{"username": "Test2", "password": "parola_secreta2"}' | jq
 
 token
 
@@ -114,14 +114,16 @@ eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJUZXN0MiIsImV4cCI6MTc3OTQ2MTg4Nyw
 
 Unauthorized
 
-curl http://localhost:8000/blueprints/api/my-blueprints
+curl http://localhost:8000/blueprints/api/my-blueprints | jq
 
-curl -H "Authorization: Bearer <TOKEN_AICI>" http://localhost:8000/blueprints/api/my-blueprints
+curl -H "Authorization: Bearer <TOKEN_AICI>" http://localhost:8000/blueprints/api/my-blueprints | jq
 
 --nu merge
-curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJUZXN0MiIsImV4cCI6MTc3OTQ2MTg4NywiaXNzIjoiZmFjdG9yaW8tYXV0aC1zZXJ2aWNlIn0.qRdzqk-8AHDr5E05lrTh_AQOLbN89MW2HdWf2oRt6m8" http://localhost:8000/blueprints/api/my-blueprints
+curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJUZXN0MiIsImV4cCI6MTc3OTQ2MTg4NywiaXNzIjoiZmFjdG9yaW8tYXV0aC1zZXJ2aWNlIn0.qRdzqk-8AHDr5E05lrTh_AQOLbN89MW2HdWf2oRt6m8" http://localhost:8000/blueprints/api/my-blueprints | jq
 -- merge
-curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJUZXN0MiIsImV4cCI6MTc3OTQ2MTg4NywiaXNzIjoiZmFjdG9yaW8tYXV0aC1zZXJ2aWNlIn0.qRdzqk-8AHDr5E05lrTh_AQOLbN89MW2HdWf2oRt6m8" -H "x-user-name: Test2" http://localhost:8000/blueprints/api/my-blueprints
+curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJUZXN0MiIsImV4cCI6MTc3OTQ2MTg4NywiaXNzIjoiZmFjdG9yaW8tYXV0aC1zZXJ2aWNlIn0.qRdzqk-8AHDr5E05lrTh_AQOLbN89MW2HdWf2oRt6m8" -H "x-user-name: Test2" http://localhost:8000/blueprints/api/my-blueprints | jq
+
+curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJUZXN0MiIsImV4cCI6MTc3OTQ2MTg4NywiaXNzIjoiZmFjdG9yaW8tYXV0aC1zZXJ2aWNlIn0.qRdzqk-8AHDr5E05lrTh_AQOLbN89MW2HdWf2oRt6m8" -H "x-user-name: Test2" http://localhost:8000/blueprints/api/blueprints | jq
 
 
 
@@ -130,7 +132,21 @@ curl -X POST http://localhost:8000/blueprints/api/blueprints/share \
 -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJUZXN0MiIsImV4cCI6MTc3OTQ2MTg4NywiaXNzIjoiZmFjdG9yaW8tYXV0aC1zZXJ2aWNlIn0.qRdzqk-8AHDr5E05lrTh_AQOLbN89MW2HdWf2oRt6m8" \
 -H "x-user-name: Test2" \
 -H "Content-Type: application/json" \
--d '{"title": "test_string_autentificare", "blueprintString": "0eNqV0t2KwjAQBeB3mesoa02szauISH8GGWinJRlFKXl3p1bYi2WlvZxwzjeBZISqveEQiAX8CA3GOtAg1DP4aZLPtKmwFTBAdc8R/GmESFcu26nEZYeallByHPogczZpmBt8gN+lswFkISGcu+/heeFbV2HQgPnHMDD0kebbjKDU3m2dgSf4TZ5vna5oKGA9B2wyf+RsuXxYJ++Xy/k62S6Xi3WyWy4fv8n6nCTYqfP7eQy0pVp6Nq24fNg7hvguuUNW2KJwx+zHWbtL6QUcq9Bz"}'
+-d '{"title": "test_title_before_present", "blueprintString": "0eNqV0t2KwjAQBeB3mesoa02szauISH8GGWinJRlFKXl3p1bYi2WlvZxwzjeBZISqveEQiAX8CA3GOtAg1DP4aZLPtKmwFTBAdc8R/GmESFcu26nEZYeallByHPogczZpmBt8gN+lswFkISGcu+/heeFbV2HQgPnHMDD0kebbjKDU3m2dgSf4TZ5vna5oKGA9B2wyf+RsuXxYJ++Xy/k62S6Xi3WyWy4fv8n6nCTYqfP7eQy0pVp6Nq24fNg7hvguuUNW2KJwx+zHWbtL6QUcq9Bz"}' | jq
+
+
+
+
+curl -X DELETE http://localhost:8000/blueprints/api/blueprints/6a0458b30d44ac6466c622f9 \
+-H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJUZXN0MiIsImV4cCI6MTc3OTQ2MTg4NywiaXNzIjoiZmFjdG9yaW8tYXV0aC1zZXJ2aWNlIn0.qRdzqk-8AHDr5E05lrTh_AQOLbN89MW2HdWf2oRt6m8" \
+-H "x-user-name: Test2" | jq
+
+
+
+
+
+
+
 
 
 
