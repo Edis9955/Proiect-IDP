@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert
+    kompose.version: 1.31.2 (a92241f79)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: auth-service
+  name: auth-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: auth-service
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert
+        kompose.version: 1.31.2 (a92241f79)
+      creationTimestamp: null
+      labels:
+        io.kompose.network/proiect-idp-app-network: "true"
+        io.kompose.network/proiect-idp-db-network: "true"
+        io.kompose.network/proiect-idp-gateway-network: "true"
+        io.kompose.service: auth-service
+    spec:
+      containers:
+        - env:
+            - name: MONGO_DETAILS
+              value: mongodb://mongodb:27017
+          image: proiect-idp-auth-service:latest
+          name: factorio-auth
+          imagePullPolicy: Never
+          resources: {}
+      restartPolicy: Always
+status: {}

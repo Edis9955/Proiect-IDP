@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert
+    kompose.version: 1.31.2 (a92241f79)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: kong-db
+  name: kong-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: kong-db
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert
+        kompose.version: 1.31.2 (a92241f79)
+      creationTimestamp: null
+      labels:
+        io.kompose.network/proiect-idp-db-network: "true"
+        io.kompose.service: kong-db
+    spec:
+      containers:
+        - env:
+            - name: POSTGRES_DB
+              value: kong
+            - name: POSTGRES_PASSWORD
+              value: kong
+            - name: POSTGRES_USER
+              value: kong
+          image: postgres:13
+          name: kong-db
+          resources: {}
+          volumeMounts:
+            - mountPath: /var/lib/postgresql/data
+              name: kong-data
+      restartPolicy: Always
+      volumes:
+        - name: kong-data
+          persistentVolumeClaim:
+            claimName: kong-data
+status: {}

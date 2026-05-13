@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert
+    kompose.version: 1.31.2 (a92241f79)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: kong-migrations
+  name: kong-migrations
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: kong-migrations
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert
+        kompose.version: 1.31.2 (a92241f79)
+      creationTimestamp: null
+      labels:
+        io.kompose.network/proiect-idp-db-network: "true"
+        io.kompose.service: kong-migrations
+    spec:
+      containers:
+        - args:
+            - kong
+            - migrations
+            - bootstrap
+          env:
+            - name: KONG_DATABASE
+              value: postgres
+            - name: KONG_PG_HOST
+              value: kong-db
+            - name: KONG_PG_PASSWORD
+              value: kong
+          image: kong:latest
+          name: kong-migrations
+          imagePullPolicy: Never
+          resources: {}
+      restartPolicy: Always
+status: {}

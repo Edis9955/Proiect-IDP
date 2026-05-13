@@ -93,6 +93,20 @@ services:
 
   # --- Gateway & Management ---
 
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: portainer
+    restart: always
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+    ports:
+      - "9443:9443"
+      - "9000:9000"
+    networks:
+      - gateway-network
   kong-db:
     image: postgres:13
     container_name: kong-db
@@ -152,3 +166,4 @@ volumes:
   mongo-data:
   prometheus-data:
   grafana-storage:
+  portainer_data:
