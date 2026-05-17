@@ -9,6 +9,7 @@ services:
       - mongo-data:/data/db
     networks:
       - db-network
+      - app-network
 
   mongo-express:
     image: mongo-express:latest
@@ -90,6 +91,18 @@ services:
     networks:
       - gateway-network
       - internal-network
+      - app-network
+
+  mongodb-exporter:
+    image: percona/mongodb_exporter:0.40
+    container_name: mongodb-exporter
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017
+    ports:
+      - "9216:9216"
+    networks:
+      - app-network
+      - db-network
 
   # --- Gateway & Management ---
 

@@ -5,6 +5,10 @@ scrape_configs:
   - job_name: 'auth-service'
     static_configs:
       - targets: ['auth-service:8000']
+  
+  - job_name: 'logic-service'
+    static_configs:
+      - targets: ['logic-service:3000']
 
   - job_name: 'validator-service'
     static_configs:
@@ -13,3 +17,7 @@ scrape_configs:
   - job_name: 'persistence-bridge'
     static_configs:
       - targets: ['persistence-bridge:3000']
+
+  - job_name: 'mongodb'
+    static_configs:
+      - targets: ['mongodb-exporter:9216']

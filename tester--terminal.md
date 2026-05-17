@@ -110,7 +110,7 @@ curl -X POST http://localhost:8000/auth/login \
 
 token
 
-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJUZXN0MiIsImV4cCI6MTc3OTQ2MTg4NywiaXNzIjoiZmFjdG9yaW8tYXV0aC1zZXJ2aWNlIn0.qRdzqk-8AHDr5E05lrTh_AQOLbN89MW2HdWf2oRt6m8
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJUZXN0MiIsImV4cCI6MTc4MTI2NjEwNSwiaXNzIjoiZmFjdG9yaW8tYXV0aC1zZXJ2aWNlIn0.ndqBszfvoeXh91sFGrJsQFSO2SGM0Zt1llb1FxQVmWQ
 
 Unauthorized
 
@@ -119,26 +119,26 @@ curl http://localhost:8000/blueprints/api/my-blueprints | jq
 curl -H "Authorization: Bearer <TOKEN_AICI>" http://localhost:8000/blueprints/api/my-blueprints | jq
 
 --nu merge
-curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJUZXN0MiIsImV4cCI6MTc3OTQ2MTg4NywiaXNzIjoiZmFjdG9yaW8tYXV0aC1zZXJ2aWNlIn0.qRdzqk-8AHDr5E05lrTh_AQOLbN89MW2HdWf2oRt6m8" http://localhost:8000/blueprints/api/my-blueprints | jq
+curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJUZXN0MiIsImV4cCI6MTc4MTI2NDUzNCwiaXNzIjoiZmFjdG9yaW8tYXV0aC1zZXJ2aWNlIn0.FENRCcEN-qBYa9a92c6H4_cg4ApUhoM482LkNWqriM0" http://localhost:8000/blueprints/api/my-blueprints | jq
 -- merge
-curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJUZXN0MiIsImV4cCI6MTc3OTQ2MTg4NywiaXNzIjoiZmFjdG9yaW8tYXV0aC1zZXJ2aWNlIn0.qRdzqk-8AHDr5E05lrTh_AQOLbN89MW2HdWf2oRt6m8" -H "x-user-name: Test2" http://localhost:8000/blueprints/api/my-blueprints | jq
+curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJUZXN0MiIsImV4cCI6MTc4MTI2NDUzNCwiaXNzIjoiZmFjdG9yaW8tYXV0aC1zZXJ2aWNlIn0.FENRCcEN-qBYa9a92c6H4_cg4ApUhoM482LkNWqriM0" -H "x-user-name: Test2" http://localhost:8000/blueprints/api/my-blueprints | jq
 
-curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJUZXN0MiIsImV4cCI6MTc3OTQ2MTg4NywiaXNzIjoiZmFjdG9yaW8tYXV0aC1zZXJ2aWNlIn0.qRdzqk-8AHDr5E05lrTh_AQOLbN89MW2HdWf2oRt6m8" -H "x-user-name: Test2" http://localhost:8000/blueprints/api/blueprints | jq
+curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJUZXN0MiIsImV4cCI6MTc4MTI2NDUzNCwiaXNzIjoiZmFjdG9yaW8tYXV0aC1zZXJ2aWNlIn0.FENRCcEN-qBYa9a92c6H4_cg4ApUhoM482LkNWqriM0" -H "x-user-name: Test2" http://localhost:8000/blueprints/api/blueprints | jq
 
 
 
 
 curl -X POST http://localhost:8000/blueprints/api/blueprints/share \
--H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJUZXN0MiIsImV4cCI6MTc3OTQ2MTg4NywiaXNzIjoiZmFjdG9yaW8tYXV0aC1zZXJ2aWNlIn0.qRdzqk-8AHDr5E05lrTh_AQOLbN89MW2HdWf2oRt6m8" \
+-H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJUZXN0MiIsImV4cCI6MTc4MTI2NDUzNCwiaXNzIjoiZmFjdG9yaW8tYXV0aC1zZXJ2aWNlIn0.FENRCcEN-qBYa9a92c6H4_cg4ApUhoM482LkNWqriM0" \
 -H "x-user-name: Test2" \
 -H "Content-Type: application/json" \
--d '{"title": "test_title_before_present", "blueprintString": "0eNqV0t2KwjAQBeB3mesoa02szauISH8GGWinJRlFKXl3p1bYi2WlvZxwzjeBZISqveEQiAX8CA3GOtAg1DP4aZLPtKmwFTBAdc8R/GmESFcu26nEZYeallByHPogczZpmBt8gN+lswFkISGcu+/heeFbV2HQgPnHMDD0kebbjKDU3m2dgSf4TZ5vna5oKGA9B2wyf+RsuXxYJ++Xy/k62S6Xi3WyWy4fv8n6nCTYqfP7eQy0pVp6Nq24fNg7hvguuUNW2KJwx+zHWbtL6QUcq9Bz"}' | jq
+-d '{"title": "titlu1", "blueprintString": "0eNqV0t2KwjAQBeB3mesoa02szauISH8GGWinJRlFKXl3p1bYi2WlvZxwzjeBZISqveEQiAX8CA3GOtAg1DP4aZLPtKmwFTBAdc8R/GmESFcu26nEZYeallByHPogczZpmBt8gN+lswFkISGcu+/heeFbV2HQgPnHMDD0kebbjKDU3m2dgSf4TZ5vna5oKGA9B2wyf+RsuXxYJ++Xy/k62S6Xi3WyWy4fv8n6nCTYqfP7eQy0pVp6Nq24fNg7hvguuUNW2KJwx+zHWbtL6QUcq9Bz"}' | jq
 
 
 
 
-curl -X DELETE http://localhost:8000/blueprints/api/blueprints/6a0458b30d44ac6466c622f9 \
--H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJUZXN0MiIsImV4cCI6MTc3OTQ2MTg4NywiaXNzIjoiZmFjdG9yaW8tYXV0aC1zZXJ2aWNlIn0.qRdzqk-8AHDr5E05lrTh_AQOLbN89MW2HdWf2oRt6m8" \
+curl -X DELETE http://localhost:8000/blueprints/api/blueprints/6a04646778a79885734546e9 \
+-H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJUZXN0MiIsImV4cCI6MTc4MTI2NDUzNCwiaXNzIjoiZmFjdG9yaW8tYXV0aC1zZXJ2aWNlIn0.FENRCcEN-qBYa9a92c6H4_cg4ApUhoM482LkNWqriM0" \
 -H "x-user-name: Test2" | jq
 
 

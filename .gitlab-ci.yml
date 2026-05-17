@@ -1,6 +1,7 @@
 stages:
   - test
   - build
+  - deploy
 
 # AUTH tests
 test_auth:
@@ -70,12 +71,14 @@ build_auth:
     changes:
       - auth-service/**/*
   script:
+    - mkdir -p /kaniko/.docker
+    - echo "{\"auths\":{\"${CI_REGISTRY}\":{\"auth\":\"$(printf "%s:%s" "${CI_REGISTRY_USER}" "${CI_REGISTRY_PASSWORD}" | base64 | tr -d '\n')\"}}}" > /kaniko/.docker/config.json
     - |
       /kaniko/executor \
         --context "${CI_PROJECT_DIR}/auth-service" \
         --dockerfile "${CI_PROJECT_DIR}/auth-service/Dockerfile" \
-        --no-push \
-        --destination "factorio-auth-service:$CI_COMMIT_SHORT_SHA"
+        --destination "${CI_REGISTRY_IMAGE}/factorio-auth-service:$CI_COMMIT_SHORT_SHA" \
+        --destination "${CI_REGISTRY_IMAGE}/factorio-auth-service:latest"
 
 # BLUEPRINT-LOGIC build
 build_blueprint-logic:
@@ -87,12 +90,14 @@ build_blueprint-logic:
     changes:
       - blueprint-logic/**/*
   script:
+    - mkdir -p /kaniko/.docker
+    - echo "{\"auths\":{\"${CI_REGISTRY}\":{\"auth\":\"$(printf "%s:%s" "${CI_REGISTRY_USER}" "${CI_REGISTRY_PASSWORD}" | base64 | tr -d '\n')\"}}}" > /kaniko/.docker/config.json
     - |
       /kaniko/executor \
         --context "${CI_PROJECT_DIR}/blueprint-logic" \
         --dockerfile "${CI_PROJECT_DIR}/blueprint-logic/Dockerfile" \
-        --no-push \
-        --destination "factorio-logic-service:$CI_COMMIT_SHORT_SHA"
+        --destination "${CI_REGISTRY_IMAGE}/factorio-logic-service:$CI_COMMIT_SHORT_SHA" \
+        --destination "${CI_REGISTRY_IMAGE}/factorio-logic-service:latest"
 
 # PERSISTANCE-BRIDGE build
 build_persistance-bridge:
@@ -104,12 +109,14 @@ build_persistance-bridge:
     changes:
       - persistence-bridge/**/*
   script:
+    - mkdir -p /kaniko/.docker
+    - echo "{\"auths\":{\"${CI_REGISTRY}\":{\"auth\":\"$(printf "%s:%s" "${CI_REGISTRY_USER}" "${CI_REGISTRY_PASSWORD}" | base64 | tr -d '\n')\"}}}" > /kaniko/.docker/config.json
     - |
       /kaniko/executor \
         --context "${CI_PROJECT_DIR}/persistence-bridge" \
         --dockerfile "${CI_PROJECT_DIR}/persistence-bridge/Dockerfile" \
-        --no-push \
-        --destination "persistence-bridge:$CI_COMMIT_SHORT_SHA"
+        --destination "${CI_REGISTRY_IMAGE}/persistence-bridge:$CI_COMMIT_SHORT_SHA" \
+        --destination "${CI_REGISTRY_IMAGE}/persistence-bridge:latest"
 
 # VALIDATOR-SERVICE build
 build_validator:
@@ -121,9 +128,94 @@ build_validator:
     changes:
       - validator-service/**/*
   script:
+    - mkdir -p /kaniko/.docker
+    - echo "{\"auths\":{\"${CI_REGISTRY}\":{\"auth\":\"$(printf "%s:%s" "${CI_REGISTRY_USER}" "${CI_REGISTRY_PASSWORD}" | base64 | tr -d '\n')\"}}}" > /kaniko/.docker/config.json
     - |
       /kaniko/executor \
         --context "${CI_PROJECT_DIR}/validator-service" \
         --dockerfile "${CI_PROJECT_DIR}/validator-service/Dockerfile" \
-        --no-push \
-        --destination "validator-service:$CI_COMMIT_SHORT_SHA"
+        --destination "${CI_REGISTRY_IMAGE}/validator-service:$CI_COMMIT_SHORT_SHA" \
+        --destination "${CI_REGISTRY_IMAGE}/validator-service:latest"
+
+.deploy_template: &deploy_template
+  stage: deploy
+  image: alpine:latest
+  before_script:
+    - apk update && apk add --no-cache openssh-client
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
+
+# DEPLOY AUTH-SERVICE
+deploy_auth:
+  <<: *deploy_template
+  only:
+    changes:
+      - auth-service/**/*
+    refs:
+      - main
+  script:
+    - |
+      ssh levent@172.17.247.64 "
+        docker login -u ${CI_REGISTRY_USER} -p ${CI_REGISTRY_PASSWORD} ${CI_REGISTRY} &&
+        docker pull ${CI_REGISTRY_IMAGE}/factorio-auth-service:$CI_COMMIT_SHORT_SHA &&
+        docker stop auth-service || true &&
+        docker rm auth-service || true &&
+        docker run -d --name auth-service -p 3000:3000 ${CI_REGISTRY_IMAGE}/factorio-auth-service:$CI_COMMIT_SHORT_SHA
+      "
+
+# DEPLOY BLUEPRINT-LOGIC
+deploy_blueprint-logic:
+  <<: *deploy_template
+  only:
+    changes:
+      - blueprint-logic/**/*
+    refs:
+      - main
+  script:
+    - |
+      ssh levent@172.17.247.64 "
+        docker login -u ${CI_REGISTRY_USER} -p ${CI_REGISTRY_PASSWORD} ${CI_REGISTRY} &&
+        docker pull ${CI_REGISTRY_IMAGE}/factorio-logic-service:$CI_COMMIT_SHORT_SHA &&
+        docker stop logic-service || true &&
+        docker rm logic-service || true &&
+        docker run -d --name logic-service -p 3001:3000 ${CI_REGISTRY_IMAGE}/factorio-logic-service:$CI_COMMIT_SHORT_SHA
+      "
+
+# DEPLOY PERSISTANCE-BRIDGE
+deploy_persistance-bridge:
+  <<: *deploy_template
+  only:
+    changes:
+      - persistence-bridge/**/*
+    refs:
+      - main
+  script:
+    - |
+      ssh levent@172.17.247.64 "
+        docker login -u ${CI_REGISTRY_USER} -p ${CI_REGISTRY_PASSWORD} ${CI_REGISTRY} &&
+        docker pull ${CI_REGISTRY_IMAGE}/persistence-bridge:$CI_COMMIT_SHORT_SHA &&
+        docker stop persistence-bridge || true &&
+        docker rm persistence-bridge || true &&
+        docker run -d --name persistence-bridge -p 3002:3000 ${CI_REGISTRY_IMAGE}/persistence-bridge:$CI_COMMIT_SHORT_SHA
+      "
+
+# DEPLOY VALIDATOR-SERVICE
+deploy_validator:
+  <<: *deploy_template
+  only:
+    changes:
+      - validator-service/**/*
+    refs:
+      - main
+  script:
+    - |
+      ssh levent@172.17.247.64 "
+        docker login -u ${CI_REGISTRY_USER} -p ${CI_REGISTRY_PASSWORD} ${CI_REGISTRY} &&
+        docker pull ${CI_REGISTRY_IMAGE}/validator-service:$CI_COMMIT_SHORT_SHA &&
+        docker stop validator-service || true &&
+        docker rm validator-service || true &&
+        docker run -d --name validator-service -p 3003:3000 ${CI_REGISTRY_IMAGE}/validator-service:$CI_COMMIT_SHORT_SHA
+      "
