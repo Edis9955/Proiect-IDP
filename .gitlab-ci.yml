@@ -3,141 +3,28 @@ stages:
   - build
   - deploy
 
-# AUTH tests
-test_auth:
-  stage: test
-  image: python:3.10-slim
-  services:
-    - name: mongo:latest
-      alias: mongodb
+# =========================================================================
+# CONFIGURATION TEMPLATES (DRY Principle)
+# =========================================================================
+
+# Global settings to fix MongoDB health check delays and runner networking
+default:
   variables:
-    MONGO_DETAILS: "mongodb://mongodb:27017"
-  only:
-    changes:
-      - auth-service/**/*
-  script:
-    - cd auth-service
-    - pip install --no-cache-dir -r requirements.txt
-    - python3 -m pytest tests/test_auth.py
+    FF_NETWORK_PER_BUILD: "true"
+    GL_HEALTHCHECK_DISABLED: "true"
 
-# BLUEPRINT-LOGIC tests
-test_blueprint-logic:
-  stage: test
-  image: node:18-slim
-  only:
-    changes:
-      - blueprint-logic/**/*
-  script:
-    - cd blueprint-logic
-    - npm install
-    - npx jest --passWithNoTests
-
-# PERSISTANCE-BRIDGE tests
-test_persistance-bridge:
-  stage: test
-  image: node:18-slim
-  services:
-    - name: mongo:latest
-      alias: mongodb
-  variables:
-    MONGO_URI: "mongodb://mongodb:27017/bridge_test_db"
-  only:
-    changes:
-      - persistence-bridge/**/*
-  script:
-    - cd persistence-bridge
-    - npm install
-    - npx jest --passWithNoTests
-
-# VALIDATOR-SERVICE tests
-test_validator:
-  stage: test
-  image: node:18-slim
-  only:
-    changes:
-      - validator-service/**/*
-  script:
-    - cd validator-service
-    - npm install
-    - npx jest --passWithNoTests --forceExit
-
-# AUTH build
-build_auth:
+# Kaniko Build Template to eliminate redundant Docker config generation
+.kaniko_build_template:
   stage: build
   image:
     name: gcr.io/kaniko-project/executor:debug
     entrypoint: [""]
-  only:
-    changes:
-      - auth-service/**/*
-  script:
+  before_script:
     - mkdir -p /kaniko/.docker
     - echo "{\"auths\":{\"${CI_REGISTRY}\":{\"auth\":\"$(printf "%s:%s" "${CI_REGISTRY_USER}" "${CI_REGISTRY_PASSWORD}" | base64 | tr -d '\n')\"}}}" > /kaniko/.docker/config.json
-    - |
-      /kaniko/executor \
-        --context "${CI_PROJECT_DIR}/auth-service" \
-        --dockerfile "${CI_PROJECT_DIR}/auth-service/Dockerfile" \
-        --destination "${CI_REGISTRY_IMAGE}/factorio-auth-service:$CI_COMMIT_SHORT_SHA" \
-        --destination "${CI_REGISTRY_IMAGE}/factorio-auth-service:latest"
 
-# BLUEPRINT-LOGIC build
-build_blueprint-logic:
-  stage: build
-  image:
-    name: gcr.io/kaniko-project/executor:debug
-    entrypoint: [""]
-  only:
-    changes:
-      - blueprint-logic/**/*
-  script:
-    - mkdir -p /kaniko/.docker
-    - echo "{\"auths\":{\"${CI_REGISTRY}\":{\"auth\":\"$(printf "%s:%s" "${CI_REGISTRY_USER}" "${CI_REGISTRY_PASSWORD}" | base64 | tr -d '\n')\"}}}" > /kaniko/.docker/config.json
-    - |
-      /kaniko/executor \
-        --context "${CI_PROJECT_DIR}/blueprint-logic" \
-        --dockerfile "${CI_PROJECT_DIR}/blueprint-logic/Dockerfile" \
-        --destination "${CI_REGISTRY_IMAGE}/factorio-logic-service:$CI_COMMIT_SHORT_SHA" \
-        --destination "${CI_REGISTRY_IMAGE}/factorio-logic-service:latest"
-
-# PERSISTANCE-BRIDGE build
-build_persistance-bridge:
-  stage: build
-  image:
-    name: gcr.io/kaniko-project/executor:debug
-    entrypoint: [""]
-  only:
-    changes:
-      - persistence-bridge/**/*
-  script:
-    - mkdir -p /kaniko/.docker
-    - echo "{\"auths\":{\"${CI_REGISTRY}\":{\"auth\":\"$(printf "%s:%s" "${CI_REGISTRY_USER}" "${CI_REGISTRY_PASSWORD}" | base64 | tr -d '\n')\"}}}" > /kaniko/.docker/config.json
-    - |
-      /kaniko/executor \
-        --context "${CI_PROJECT_DIR}/persistence-bridge" \
-        --dockerfile "${CI_PROJECT_DIR}/persistence-bridge/Dockerfile" \
-        --destination "${CI_REGISTRY_IMAGE}/persistence-bridge:$CI_COMMIT_SHORT_SHA" \
-        --destination "${CI_REGISTRY_IMAGE}/persistence-bridge:latest"
-
-# VALIDATOR-SERVICE build
-build_validator:
-  stage: build
-  image:
-    name: gcr.io/kaniko-project/executor:debug
-    entrypoint: [""]
-  only:
-    changes:
-      - validator-service/**/*
-  script:
-    - mkdir -p /kaniko/.docker
-    - echo "{\"auths\":{\"${CI_REGISTRY}\":{\"auth\":\"$(printf "%s:%s" "${CI_REGISTRY_USER}" "${CI_REGISTRY_PASSWORD}" | base64 | tr -d '\n')\"}}}" > /kaniko/.docker/config.json
-    - |
-      /kaniko/executor \
-        --context "${CI_PROJECT_DIR}/validator-service" \
-        --dockerfile "${CI_PROJECT_DIR}/validator-service/Dockerfile" \
-        --destination "${CI_REGISTRY_IMAGE}/validator-service:$CI_COMMIT_SHORT_SHA" \
-        --destination "${CI_REGISTRY_IMAGE}/validator-service:latest"
-
-.deploy_template: &deploy_template
+# Local Deploy Template
+.deploy_template:
   stage: deploy
   image: alpine:latest
   tags:
@@ -146,14 +33,117 @@ build_validator:
     - if [ ! -x "$(command -v docker)" ]; then apk update && apk add --no-cache docker-cli; fi
     - docker login -u ${CI_REGISTRY_USER} -p ${CI_REGISTRY_PASSWORD} ${CI_REGISTRY}
 
-# DEPLOY AUTH-SERVICE
+# =========================================================================
+# STAGE: TEST
+# =========================================================================
+
+test_auth:
+  stage: test
+  image: python:3.10-slim
+  services:
+    - name: mongo:latest
+      alias: mongodb
+  variables:
+    MONGO_DETAILS: "mongodb://mongodb:27017"
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      changes: [auth-service/**/*]
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+      changes: [auth-service/**/*]
+  script:
+    - cd auth-service
+    - pip install --no-cache-dir -r requirements.txt
+    - python3 -m pytest tests/test_auth.py
+
+test_blueprint-logic:
+  stage: test
+  image: node:18-slim
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      changes: [blueprint-logic/**/*]
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+      changes: [blueprint-logic/**/*]
+  script:
+    - cd blueprint-logic
+    - npm install
+    - npx jest --passWithNoTests
+
+test_persistance-bridge:
+  stage: test
+  image: node:18-slim
+  services:
+    - name: mongo:latest
+      alias: mongodb
+  variables:
+    MONGO_URI: "mongodb://mongodb:27017/bridge_test_db"
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      changes: [persistence-bridge/**/*]
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+      changes: [persistence-bridge/**/*]
+  script:
+    - cd persistence-bridge
+    - npm install
+    - npx jest --passWithNoTests
+
+test_validator:
+  stage: test
+  image: node:18-slim
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      changes: [validator-service/**/*]
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+      changes: [validator-service/**/*]
+  script:
+    - cd validator-service
+    - npm install
+    - npx jest --passWithNoTests --forceExit
+
+# =========================================================================
+# STAGE: BUILD (Using Kaniko Template)
+# =========================================================================
+
+build_auth:
+  extends: .kaniko_build_template
+  rules:
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+      changes: [auth-service/**/*]
+  script:
+    - /kaniko/executor --context "${CI_PROJECT_DIR}/auth-service" --dockerfile "${CI_PROJECT_DIR}/auth-service/Dockerfile" --destination "${CI_REGISTRY_IMAGE}/factorio-auth-service:$CI_COMMIT_SHORT_SHA" --destination "${CI_REGISTRY_IMAGE}/factorio-auth-service:latest"
+
+build_blueprint-logic:
+  extends: .kaniko_build_template
+  rules:
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+      changes: [blueprint-logic/**/*]
+  script:
+    - /kaniko/executor --context "${CI_PROJECT_DIR}/blueprint-logic" --dockerfile "${CI_PROJECT_DIR}/blueprint-logic/Dockerfile" --destination "${CI_REGISTRY_IMAGE}/factorio-logic-service:$CI_COMMIT_SHORT_SHA" --destination "${CI_REGISTRY_IMAGE}/factorio-logic-service:latest"
+
+build_persistance-bridge:
+  extends: .kaniko_build_template
+  rules:
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+      changes: [persistence-bridge/**/*]
+  script:
+    - /kaniko/executor --context "${CI_PROJECT_DIR}/persistence-bridge" --dockerfile "${CI_PROJECT_DIR}/persistence-bridge/Dockerfile" --destination "${CI_REGISTRY_IMAGE}/persistence-bridge:$CI_COMMIT_SHORT_SHA" --destination "${CI_REGISTRY_IMAGE}/persistence-bridge:latest"
+
+build_validator:
+  extends: .kaniko_build_template
+  rules:
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+      changes: [validator-service/**/*]
+  script:
+    - /kaniko/executor --context "${CI_PROJECT_DIR}/validator-service" --dockerfile "${CI_PROJECT_DIR}/validator-service/Dockerfile" --destination "${CI_REGISTRY_IMAGE}/validator-service:$CI_COMMIT_SHORT_SHA" --destination "${CI_REGISTRY_IMAGE}/validator-service:latest"
+
+# =========================================================================
+# STAGE: DEPLOY (Using Deploy Template)
+# =========================================================================
+
 deploy_auth:
-  <<: *deploy_template
-  only:
-    changes:
-      - auth-service/**/*
-    refs:
-      - main
+  extends: .deploy_template
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+      changes: [auth-service/**/*]
   script:
     - |
       ssh levent@172.17.247.64 "
@@ -164,14 +154,11 @@ deploy_auth:
         docker run -d --name auth-service -p 3000:3000 ${CI_REGISTRY_IMAGE}/factorio-auth-service:$CI_COMMIT_SHORT_SHA
       "
 
-# DEPLOY BLUEPRINT-LOGIC
 deploy_blueprint-logic:
-  <<: *deploy_template
-  only:
-    changes:
-      - blueprint-logic/**/*
-    refs:
-      - main
+  extends: .deploy_template
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+      changes: [blueprint-logic/**/*]
   script:
     - |
       ssh levent@172.17.247.64 "
@@ -182,14 +169,11 @@ deploy_blueprint-logic:
         docker run -d --name logic-service -p 3001:3000 ${CI_REGISTRY_IMAGE}/factorio-logic-service:$CI_COMMIT_SHORT_SHA
       "
 
-# DEPLOY PERSISTANCE-BRIDGE
 deploy_persistance-bridge:
-  <<: *deploy_template
-  only:
-    changes:
-      - persistence-bridge/**/*
-    refs:
-      - main
+  extends: .deploy_template
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+      changes: [persistence-bridge/**/*]
   script:
     - |
       ssh levent@172.17.247.64 "
@@ -200,14 +184,11 @@ deploy_persistance-bridge:
         docker run -d --name persistence-bridge -p 3002:3000 ${CI_REGISTRY_IMAGE}/persistence-bridge:$CI_COMMIT_SHORT_SHA
       "
 
-# DEPLOY VALIDATOR-SERVICE
 deploy_validator:
-  <<: *deploy_template
-  only:
-    changes:
-      - validator-service/**/*
-    refs:
-      - main
+  extends: .deploy_template
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+      changes: [validator-service/**/*]
   script:
     - |
       ssh levent@172.17.247.64 "
