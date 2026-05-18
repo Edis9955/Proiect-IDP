@@ -9,9 +9,10 @@ test_auth:
   image: python:3.10-slim
   services:
     - name: mongo:latest
-      alias: localhost
+      alias: mongodb
+      entrypoint: ["mongod", "--bind_ip_all", "--nojournal"]
   variables:
-    MONGO_DETAILS: "mongodb://localhost:27017"
+    MONGO_DETAILS: "mongodb://mongodb:27017"
   only:
     changes:
       - auth-service/**/*
